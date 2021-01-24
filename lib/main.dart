@@ -24,10 +24,4 @@ class MyApp extends StatelessWidget {
       home: SplashPage(),
     );
   }
-  //TODO1: Tambahkan aplikasi ke firebase
-  //TODO2: Tambahkan library firebase
-  //TODO3: Tambahkan data ke firebase
-  //TODO4: Ubah HomePage agar dapat menarik data dari firebase
-  //TODO5: Tambahkan page baru bernama add_page.dart
-  //TODO6: Desain Page tersebut untuk pertemuan berikutnya
 }

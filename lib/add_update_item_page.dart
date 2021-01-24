@@ -7,17 +7,32 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as Path;
 import 'package:firebase_storage/firebase_storage.dart';
 
-class AddItemPage extends StatefulWidget {
+class AddUpdateItemPage extends StatefulWidget {
+  final id;
+  final String name;
+  final String desc;
+  final String photo;
+
+  AddUpdateItemPage(this.id, {this.name, this.desc, this.photo});
   @override
-  _AddItemPageState createState() => _AddItemPageState();
+  _AddUpdateItemPageState createState() => _AddUpdateItemPageState();
 }
 
 File _image;
 var firestore = FirebaseFirestore.instance;
 
-class _AddItemPageState extends State<AddItemPage> {
+class _AddUpdateItemPageState extends State<AddUpdateItemPage> {
   TextEditingController nameController = TextEditingController();
   TextEditingController descController = TextEditingController();
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    if (widget.id != null) {
+      nameController.text = widget.name;
+      descController.text = widget.desc;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +42,7 @@ class _AddItemPageState extends State<AddItemPage> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios),
           onPressed: () {
+            _image = null;
             Navigator.pop(context);
           },
         ),
@@ -52,7 +68,7 @@ class _AddItemPageState extends State<AddItemPage> {
                           },
                           child: CircleAvatar(
                             radius: 100,
-                            backgroundImage: AssetImage(_image.path),
+                            backgroundImage: FileImage(_image),
                           ),
                         )
                       : GestureDetector(
@@ -62,7 +78,9 @@ class _AddItemPageState extends State<AddItemPage> {
                           },
                           child: CircleAvatar(
                             radius: 100,
-                            backgroundImage: AssetImage("images/empty_pic.png"),
+                            backgroundImage: widget.id != null
+                                ? NetworkImage(widget.photo)
+                                : AssetImage("images/empty_pic.png"),
                           ),
                         ),
                 ),
@@ -103,7 +121,7 @@ class _AddItemPageState extends State<AddItemPage> {
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
                     child: Text(
-                      "Add Data",
+                      widget.id == null ? "Add Data" : "Update Data",
                       style: kWhiteTextStyle.copyWith(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -112,8 +130,10 @@ class _AddItemPageState extends State<AddItemPage> {
                   ),
                   onPressed: () {
                     try {
-                      uploadImage(_image, context, nameController.text,
-                          descController.text);
+                      uploadImage(_image, context, widget.id,
+                          nameController.text, descController.text);
+                      _image = null;
+                      Navigator.pop(context);
                     } catch (e) {
                       print(e);
                     }
@@ -138,24 +158,28 @@ Future<File> chooseImage() async {
   return currentImage;
 }
 
-Future<String> uploadImage(File image, BuildContext context, String singerName,
-    String singerDesc) async {
+Future<String> uploadImage(File image, BuildContext context, String id,
+    String singerName, String singerDesc) async {
   StorageReference storageReference = FirebaseStorage.instance
       .ref()
       .child('singers/${Path.basename(image.path)}}');
   StorageUploadTask uploadTask = storageReference.putFile(image);
   await uploadTask.onComplete;
   storageReference.getDownloadURL().then((fileURL) {
-    addDatabase(context, singerName, singerDesc, fileURL);
+    if (id == null) {
+      addDatabase(context, singerName, singerDesc, fileURL);
+    } else {
+      updateDatabase(context, id, singerName, singerDesc, fileURL);
+    }
   });
 }
 
 Future addDatabase(BuildContext context, String singerName, String singerDesc,
     String singerPhoto) async {
-  CollectionReference books = firestore.collection('singers');
+  CollectionReference singers = firestore.collection('singers');
 
   try {
-    DocumentReference result = await books.add(<String, String>{
+    DocumentReference result = await singers.add(<String, String>{
       'name': singerName,
       'desc': singerDesc,
       'photo': singerPhoto,
@@ -167,4 +191,14 @@ Future addDatabase(BuildContext context, String singerName, String singerDesc,
   } catch (e) {
     print(e);
   }
+}
+
+Future updateDatabase(BuildContext context, String id, String singerName,
+    String singerDesc, String singerPhoto) async {
+  DocumentReference currentSinger = firestore.collection('singers').doc(id);
+  await currentSinger.update(<String, String>{
+    'name': singerName,
+    'desc': singerDesc,
+    'photo': singerPhoto,
+  });
 }

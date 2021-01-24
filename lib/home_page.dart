@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'const.dart';
 import 'detail_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:week4_complete_project/add_item_page.dart';
+import 'package:week4_complete_project/add_update_item_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -45,6 +45,7 @@ class _HomePageState extends State<HomePage> {
                         itemCount: snapshot.data.docs.length,
                         itemBuilder: (context, index) {
                           DocumentSnapshot singers = snapshot.data.docs[index];
+                          final id = singers.id;
                           final name = singers.get('name');
                           final desc = singers.get('desc');
                           final photo = singers.get('photo');
@@ -75,6 +76,19 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                 );
                               },
+                              onDoubleTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AddUpdateItemPage(
+                                      id,
+                                      name: name,
+                                      desc: desc,
+                                      photo: photo,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           );
                         },
@@ -85,8 +99,8 @@ class _HomePageState extends State<HomePage> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            Navigator.of(context)
-                .push(MaterialPageRoute(builder: (context) => AddItemPage()));
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AddUpdateItemPage(null)));
           },
           backgroundColor: Colors.white,
           child: Icon(
